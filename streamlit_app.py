@@ -25,10 +25,10 @@ custom_css = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
 
-/* 全体のフォントと背景色 */
-body, .stApp {
+/* 全体のフォントと背景色 (ヘッダー含む) */
+body, .stApp, [data-testid="stHeader"] {
     font-family: 'Noto Sans JP', sans-serif;
-    background-color: #1E1E1E; /* ダークグレーの背景 */
+    background-color: #1E1E1E !important; /* ダークグレーの背景 */
     color: #EAEAEA; /* 明るいグレーのテキスト */
 }
 
@@ -50,16 +50,23 @@ div[data-testid="stChatMessage"] p {
     color: #EAEAEA;
 }
 
-/* チャット入力欄 */
+/* チャット入力欄のコンテナ */
 div[data-testid="stChatInput"] {
-    background-color: #1E1E1E;
+    background-color: transparent;
     border-top: 1px solid #444444;
 }
 
+/* チャット書き込み欄 (白背景) */
 textarea[data-testid="stChatInputTextArea"] {
-    background-color: #2D2D2D;
-    color: #EAEAEA;
-    border: 1px solid #555555;
+    background-color: #FFFFFF;
+    color: #1E1E1E;
+    border: 1px solid #AAAAAA;
+    border-radius: 5px; /* 角を少し丸める */
+}
+
+/* プレースホルダーのスタイル */
+textarea[data-testid="stChatInputTextArea"]::placeholder {
+  color: #666666;
 }
 
 /* スピナーのテキスト */
