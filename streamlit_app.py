@@ -20,6 +20,57 @@ FAISS_INDEX_PATH = os.path.join(APP_DIR, "data", "faiss_index")
 AVATAR_IMAGE_PATH = os.path.join(APP_DIR, "assets", "avatar.png")
 
 
+# --- デザイン設定 ---
+custom_css = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+
+/* 全体のフォントと背景色 */
+body, .stApp {
+    font-family: 'Noto Sans JP', sans-serif;
+    background-color: #1E1E1E; /* ダークグレーの背景 */
+    color: #EAEAEA; /* 明るいグレーのテキスト */
+}
+
+/* アプリのタイトル */
+h1 {
+    color: #FFFFFF;
+    text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
+}
+
+/* チャットメッセージのスタイル */
+div[data-testid="stChatMessage"] {
+    background-color: #2D2D2D; /* やや明るいグレー */
+    border-radius: 12px;
+    border: 1px solid #444444;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+div[data-testid="stChatMessage"] p {
+    color: #EAEAEA;
+}
+
+/* チャット入力欄 */
+div[data-testid="stChatInput"] {
+    background-color: #1E1E1E;
+    border-top: 1px solid #444444;
+}
+
+textarea[data-testid="stChatInputTextArea"] {
+    background-color: #2D2D2D;
+    color: #EAEAEA;
+    border: 1px solid #555555;
+}
+
+/* スピナーのテキスト */
+.stSpinner > div > div {
+    color: #FFFFFF;
+}
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
+
+
 # --- 初期設定とモデル準備 ---
 st.title("いつでもしゅんさん")
 
@@ -118,7 +169,7 @@ if prompt := st.chat_input("質問や相談したいことを入力してね"):
         full_response = ""
         sources = []
         
-        with st.spinner("情報を検索・生成中..."):
+        with st.spinner("宇宙と接続中だよ！ちょっとまってね..."):
             search_query = generate_search_query(prompt, st.session_state.messages)
             docs_with_scores = db.similarity_search_with_score(search_query, k=5)
             
