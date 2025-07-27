@@ -13,12 +13,9 @@ import re
 import base64
 
 # --- パス設定 ---
-# このファイルの場所を基準に、親ディレクトリへのパスを取得
+# このファイルの場所を基準に、パスを正しく設定
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-PARENT_DIR = os.path.dirname(APP_DIR)
-
-# ナレッジベースとFAISSインデックスのパスを正しく設定
-KNOWLEDGE_BASE_DIR = os.path.join(PARENT_DIR, "オーダーノート現実創造プログラム")
+KNOWLEDGE_BASE_DIR = os.path.join(APP_DIR, "knowledge_base")
 FAISS_INDEX_PATH = os.path.join(APP_DIR, "data", "faiss_index")
 AVATAR_IMAGE_PATH = os.path.join(APP_DIR, "assets", "avatar.png")
 BACKGROUND_IMAGE_PATH = os.path.join(APP_DIR, "assets", "background.jpg")
