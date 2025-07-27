@@ -18,47 +18,6 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 KNOWLEDGE_BASE_DIR = os.path.join(APP_DIR, "knowledge_base")
 FAISS_INDEX_PATH = os.path.join(APP_DIR, "data", "faiss_index")
 AVATAR_IMAGE_PATH = os.path.join(APP_DIR, "assets", "avatar.png")
-BACKGROUND_IMAGE_PATH = os.path.join(APP_DIR, "assets", "background.jpg")
-
-# --- デザイン設定 ---
-def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-try:
-    bg_image_base64 = get_base64_of_bin_file(BACKGROUND_IMAGE_PATH)
-    custom_css = f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
-    .stApp {{
-        background-image: url("data:image/jpg;base64,{bg_image_base64}");
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-    }}
-    h1 {{
-        color: #FFFFFF;
-        text-shadow: 2px 2px 8px #000000;
-    }}
-    /* その他のスタイル */
-    div[data-testid="stChatMessage"] {{
-        background-color: rgba(30, 30, 30, 0.85);
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }}
-    div[data-testid="stChatMessage"] p, 
-    .stSpinner > div > div {{
-        color: #EAEAEA;
-        font-family: 'Noto Sans JP', sans-serif;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
-    }}
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-except FileNotFoundError:
-    st.warning("背景画像が見つかりませんでした。デフォルトの背景を使用します。")
 
 
 # --- 初期設定とモデル準備 ---
