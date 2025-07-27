@@ -25,8 +25,8 @@ custom_css = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
 
-/* 全体のフォントと背景色 (ヘッダー含む) */
-body, .stApp, [data-testid="stHeader"] {
+/* 全体のフォントと背景色 (ヘッダー・フッター含む) */
+body, .stApp, [data-testid="stHeader"], [data-testid="stFooter"] {
     font-family: 'Noto Sans JP', sans-serif;
     background-color: #1E1E1E !important; /* ダークグレーの背景 */
     color: #EAEAEA; /* 明るいグレーのテキスト */
@@ -50,23 +50,23 @@ div[data-testid="stChatMessage"] p {
     color: #EAEAEA;
 }
 
-/* チャット入力欄のコンテナ */
+/* チャット入力欄のコンテナ (フッター部分) */
 div[data-testid="stChatInput"] {
-    background-color: transparent;
+    background-color: #1E1E1E !important;
     border-top: 1px solid #444444;
 }
 
-/* チャット書き込み欄 (白背景) */
+/* チャット書き込み欄 (シンプル・ダーク調に初期化) */
 textarea[data-testid="stChatInputTextArea"] {
-    background-color: #FFFFFF;
-    color: #1E1E1E;
-    border: 1px solid #AAAAAA;
-    border-radius: 5px; /* 角を少し丸める */
+    background-color: #2D2D2D;
+    color: #EAEAEA;
+    border: 1px solid #555555;
+    border-radius: 5px;
 }
 
 /* プレースホルダーのスタイル */
 textarea[data-testid="stChatInputTextArea"]::placeholder {
-  color: #666666;
+  color: #888888;
 }
 
 /* スピナーのテキスト */
