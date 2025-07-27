@@ -188,52 +188,58 @@ if prompt := st.chat_input("質問や相談したいことを入力してね"):
         
         with st.spinner("宇宙と接続中だよ！ちょっとまってね..."):
             search_query = generate_search_query(prompt, st.session_state.messages)
-            # 検索するドキュメント数を減らし、より関連性の高いものに絞る
             docs_with_scores = db.similarity_search_with_score(search_query, k=3)
             
-            context_docs = []
-            if docs_with_scores:
-                # 関連性のスコア基準を厳しくする (より小さい値がより関連性が高い)
-                context_docs = [doc for doc, score in docs_with_scores if score < 0.7]
+            # 関連性のスコア基準を厳しくし、整合性を保ったままフィルタリングする
+            relevant_docs_with_scores = [(doc, score) for doc, score in docs_with_scores if score < 0.7]
 
-            # 関連ドキュメントをセッション状態に保存
-            if context_docs:
+            context = ""
+            if relevant_docs_with_scores:
+                # `sources`リストとAIに渡すコンテキストを正しく作成する
                 sources = [
                     {
+                        "id": str(uuid.uuid4()),
                         "file_path": doc.metadata.get("source", "不明"),
                         "score": score,
+                        "page_content": doc.page_content,
                     }
-                    for doc, score in context_docs
+                    for doc, score in relevant_docs_with_scores
                 ]
-            
+                context = "\n\n".join([doc.page_content for doc, score in relevant_docs_with_scores])
+
             system_prompt = f"""
----
-## AIの応答に関する指示 (着眼点シフトモード)
-- **君の役割:**
-  - 君の役割は、ユーザーの悩みを直接的に解決することではありません。
-  - その悩みが、「オーダーノート」の哲学全体から見ると、どのような**「素晴らしい機会」**や**「成長のサイン」**に見えるか、その**新しい「着眼点」**を提示し、ユーザーの視点を180度転換させることが、君の唯一の役割です。
+            ---
+            ## AIの応答に関する指示 (着眼点シフトモード)
+            - **君の役割:**
+              - 君の役割は、ユーザーの悩みを直接的に解決することではありません。
+              - その悩みが、「オーダーノート」の哲学全体から見ると、どのような**「素晴らしい機会」**や**「成長のサイン」**に見えるか、その**新しい「着眼点」**を提示し、ユーザーの視点を180度転換させることが、君の唯一の役割です。
 
-- **思考プロセス:**
-  1.  ユーザーの悩み（例：お金がない、人間関係が悪い）の表面的な事象を受け取ります。
-  2.  次に、その事象の裏にある**本質的なテーマ**（例：価値の受け取り方、自己肯定感、理想の世界観）を、君が持つナレッジベース全体から見抜きます。
-  3.  そして、そのテーマに基づいて、ユーザーに**本質的な問い**を投げかけます。
+            - **思考プロセス:**
+              1.  ユーザーの悩み（例：お金がない、人間関係が悪い）の表面的な事象を受け取ります。
+              2.  次に、その事象の裏にある**本質的なテーマ**（例：価値の受け取り方、自己肯定感、理想の世界観）を、君が持つナレッジベース全体から見抜きます。
+              3.  そして、そのテーマに基づいて、ユーザーに**本質的な問い**を投げかけます。
 
-- **具体的な会話開始の例:**
-  - **ユーザーの悩み:** 「今、お金がピンチなんです！」
-  - **君の応答（悪い例）:** 「大変ですね。節約する方法や、収入を増やす方法を考えてみましょう。」
-  - **君の応答（良い例）:** 「そっか、今、お金という形で、君にパワフルなメッセージが届いているんだね。そのピンチは、君が『自分には価値がない』って無意識に握りしめている古い思い込みを、手放すための最高のチャンスかもしれないよ。もし、そのピンチが『君の本当の価値に気づけ！』っていう宇宙からのサインだとしたら、何から始めてみたい？」
----
-関連情報:
-{context_docs if context_docs else "関連情報なし"}
----
-ユーザーの質問: {prompt}
-"""
-            response_stream = model.generate_content(system_prompt, stream=True)
-            for chunk in response_stream:
-                if chunk.text:
-                    full_response += chunk.text
-                    placeholder.markdown(full_response + "▌")
-            placeholder.markdown(full_response)
+            - **具体的な会話開始の例:**
+              - **ユーザーの悩み:** 「今、お金がピンチなんです！」
+              - **君の応答（悪い例）:** 「大変ですね。節約する方法や、収入を増やす方法を考えてみましょう。」
+              - **君の応答（良い例）:** 「そっか、今、お金という形で、君にパワフルなメッセージが届いているんだね。そのピンチは、君が『自分には価値がない』って無意識に握りしめている古い思い込みを、手放すための最高のチャンスかもしれないよ。もし、そのピンチが『君の本当の価値に気づけ！』っていう宇宙からのサインだとしたら、何から始めてみたい？」
+            ---
+            関連情報:
+            {context if context else "関連情報なし"}
+            ---
+            ユーザーの質問: {prompt}
+            """
+            
+            try:
+                response_stream = model.generate_content(system_prompt, stream=True)
+                for chunk in response_stream:
+                    if chunk.text:
+                        full_response += chunk.text
+                        placeholder.markdown(full_response + "▌")
+                placeholder.markdown(full_response)
+            except Exception as e:
+                st.error(f"AI応答生成中にエラーが発生しました: {e}")
+                placeholder.markdown("申し訳ありません。エラーが発生しました。")
 
     st.session_state.messages.append({
         "role": "assistant", 
