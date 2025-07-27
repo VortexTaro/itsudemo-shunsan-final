@@ -101,29 +101,39 @@ except Exception as e:
 
 
 # --- 関数定義 ---
-def generate_search_query(prompt, conversation_history):
-    history_str = "\n".join([f"{msg['role']}: {msg['content']}" for msg in conversation_history])
+def generate_search_query(prompt, history):
+    """
+    ユーザーのプロンプトと会話履歴から、FAISS検索に最適なキーワードを生成する。
+    """
+    model = genai.GenerativeModel("gemini-1.5-pro-latest")
+    
+    # 履歴を整形
+    history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
+    
     prompt_template = f"""
-あなたは、ユーザーの質問から最も重要なキーワードを抽出する専門家です。以下のユーザープロンプトを分析し、ベクトルデータベース検索に使うための、最も的確な検索キーワードを2〜3語で抽出してください。
+あなたは、ユーザーの質問を分析し、情報検索クエリを生成するプロフェッショナルです。以下の指示に厳格に従ってください。
 
-**思考プロセス:**
-1. ユーザーの質問の「主題」は何かを特定する。（例：「オーダーノートの書き方」）
-2. その主題を最もよく表す名詞や動詞を抜き出す。（例：「オーダーノート」「書き方」）
-3. 抽象的な概念よりも、具体的・固有名詞的なキーワードを優先する。
-4. 抽出したキーワードをスペースで区切って出力する。
+**指示:**
+1.  ユーザーの質問から、最も中心的で具体的な「名詞」を最大3つまで抽出します。
+2.  感情的な表現、挨拶、一般的な動詞（例：「教えて」「知りたい」）は完全に無視します。
+3.  固有名詞（例：「オーダーノート」）や、具体的な行動や方法を示す名詞（例：「書き方」「作り方」「手順」）を最優先します。
+4.  抽象的な概念（例：「幸せ」「豊かさ」「周波数」）は、それが質問の明確な主題でない限り、含めないでください。
+5.  抽出したキーワードを、重要度が高い順に半角スペースで区切って出力します。他の余計なテキストは一切含めないでください。
 
-**ユーザーのプロンプト:**
+**これまでの会話履歴:**
+{history_text}
+
+**ユーザーの最新プロンプト:**
 {prompt}
 
-**抽出された検索キーワード:**
+**生成された検索クエリ:**
 """
-    try:
-        response = model.generate_content(prompt_template)
-        return response.text.strip()
-    except Exception:
-        return prompt
+    
+    response = model.generate_content(prompt_template)
+    return response.text.strip()
 
-@st.cache_resource
+
+@st.cache_resource(show_spinner=False)
 def load_faiss_index(_embeddings):
     if os.path.exists(FAISS_INDEX_PATH):
         return FAISS.load_local(FAISS_INDEX_PATH, _embeddings, allow_dangerous_deserialization=True)
@@ -178,16 +188,23 @@ if prompt := st.chat_input("質問や相談したいことを入力してね"):
         
         with st.spinner("宇宙と接続中だよ！ちょっとまってね..."):
             search_query = generate_search_query(prompt, st.session_state.messages)
-            docs_with_scores = db.similarity_search_with_score(search_query, k=5)
+            # 検索するドキュメント数を減らし、より関連性の高いものに絞る
+            docs_with_scores = db.similarity_search_with_score(search_query, k=3)
             
-            context = ""
-            for doc, score in docs_with_scores:
-                if score < 0.75:
-                    context += doc.page_content + "\n\n"
-                    sources.append({
+            context_docs = []
+            if docs_with_scores:
+                # 関連性のスコア基準を厳しくする (より小さい値がより関連性が高い)
+                context_docs = [doc for doc, score in docs_with_scores if score < 0.7]
+
+            # 関連ドキュメントをセッション状態に保存
+            if context_docs:
+                sources = [
+                    {
                         "file_path": doc.metadata.get("source", "不明"),
                         "score": score,
-                    })
+                    }
+                    for doc, score in context_docs
+                ]
             
             system_prompt = f"""
 ---
@@ -207,7 +224,7 @@ if prompt := st.chat_input("質問や相談したいことを入力してね"):
   - **君の応答（良い例）:** 「そっか、今、お金という形で、君にパワフルなメッセージが届いているんだね。そのピンチは、君が『自分には価値がない』って無意識に握りしめている古い思い込みを、手放すための最高のチャンスかもしれないよ。もし、そのピンチが『君の本当の価値に気づけ！』っていう宇宙からのサインだとしたら、何から始めてみたい？」
 ---
 関連情報:
-{context if context else "関連情報なし"}
+{context_docs if context_docs else "関連情報なし"}
 ---
 ユーザーの質問: {prompt}
 """
